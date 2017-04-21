@@ -104,10 +104,12 @@ ElasticFusion::~ElasticFusion()
 
     //Output deformed pose graph
     std::string fname = saveFilename;
-    fname.append(".freiburg");
+    fname.append(".posegraph");
 
     std::ofstream f;
     f.open(fname.c_str(), std::fstream::out);
+
+    std::cout << "writing pose graph with size " << poseGraph.size() << std::endl;
 
     for(size_t i = 0; i < poseGraph.size(); i++)
     {
