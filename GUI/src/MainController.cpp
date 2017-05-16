@@ -186,7 +186,9 @@ void MainController::launch()
         {
             run();
             printf("run done\n");
+            eFusion->savePly();
         }
+
 
         if(eFusion == 0 || resetButton)
         {
@@ -253,8 +255,8 @@ void MainController::run()
                 }
                 else
                 {
-                    //printf("calling getNext()\n");
-                    logReader->getNext();
+                    //std::cout << "Calling safeGetNext()" << std::endl;
+                    good = logReader->safeGetNext();
                     if (!good) {
                         return;
                     }

@@ -37,6 +37,7 @@ LcmLogReader::LcmLogReader(std::string file, bool flipColors)
     currentFrame = 0;
 
     numFrames = 10000;
+    next_exists = true;
 
     depthReadBuffer = new unsigned char[numPixels * 2];
     imageReadBuffer = new unsigned char[numPixels * 3];
@@ -72,6 +73,12 @@ void LcmLogReader::getNext()
     getCore();
 }
 
+bool LcmLogReader::safeGetNext()
+{
+    getNext();
+    return next_exists;
+}
+
 void LcmLogReader::getCore()
 {
     std::string channel = "";
@@ -81,7 +88,8 @@ void LcmLogReader::getCore()
         event = logFile->readNextEvent();
         if (event==NULL) {
             std::cout << "LcmLogReader found the end of the file." << std::endl;
-            //return false;
+            next_exists = false;
+            return;
         }
         channel = event->channel;
         //std::cout << "read event on channel: " << channel << std::endl;
@@ -208,7 +216,6 @@ int LcmLogReader::getNumFrames()
 
 bool LcmLogReader::hasMore()
 {
-    std::cout << "numFrames: " << numFrames << std::endl;
     return currentFrame + 1 < numFrames;
 }
 

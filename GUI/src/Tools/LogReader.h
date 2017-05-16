@@ -61,6 +61,8 @@ class LogReader
 
         virtual bool hasMore() = 0;
 
+        virtual bool safeGetNext() = 0;
+
         virtual bool rewound() = 0;
 
         virtual void rewind() = 0;
@@ -94,6 +96,7 @@ class LogReader
         int width;
         int height;
         int numPixels;
+        bool next_exists;
 
         JPEGLoader jpeg;
 };

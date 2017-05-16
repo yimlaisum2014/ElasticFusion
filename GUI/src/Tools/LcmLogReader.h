@@ -46,6 +46,8 @@ class LcmLogReader : public LogReader
 
         void getNext();
 
+        bool safeGetNext();
+
         void getBack();
 
         int getNumFrames();
