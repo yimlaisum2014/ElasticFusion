@@ -136,6 +136,7 @@ MainController::~MainController()
     if(eFusion)
     {
         delete eFusion;
+        std::cout << "deleting eFUsion" << std::endl;
     }
 
     if(gui)
@@ -254,6 +255,9 @@ void MainController::run()
                 {
                     //printf("calling getNext()\n");
                     logReader->getNext();
+                    if (!good) {
+                        return;
+                    }
                 }
                 TOCK("LogRead");
 
@@ -581,5 +585,6 @@ void MainController::run()
         }
 
         TOCK("GUI");
+        std::cout << "has more: " << logReader->hasMore() << std::endl;
     }
 }

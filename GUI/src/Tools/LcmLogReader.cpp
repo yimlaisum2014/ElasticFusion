@@ -79,6 +79,10 @@ void LcmLogReader::getCore()
 
     while (channel != "OPENNI_FRAME") {
         event = logFile->readNextEvent();
+        if (event==NULL) {
+            std::cout << "LcmLogReader found the end of the file." << std::endl;
+            //return false;
+        }
         channel = event->channel;
         //std::cout << "read event on channel: " << channel << std::endl;
     }
@@ -164,6 +168,7 @@ void LcmLogReader::getCore()
     }
 
     currentFrame++;
+    //return true;
 }
 
 void LcmLogReader::fastForward(int frame)
@@ -203,6 +208,7 @@ int LcmLogReader::getNumFrames()
 
 bool LcmLogReader::hasMore()
 {
+    std::cout << "numFrames: " << numFrames << std::endl;
     return currentFrame + 1 < numFrames;
 }
 
