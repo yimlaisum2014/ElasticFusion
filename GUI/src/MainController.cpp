@@ -17,6 +17,7 @@
  */
  
 #include "MainController.h"
+#include "Tools/LcmLogReader.h"
 
 MainController::MainController(int argc, char * argv[])
  : good(true),
@@ -49,7 +50,8 @@ MainController::MainController(int argc, char * argv[])
 
     if(logFile.length())
     {
-        logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+//        logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+        logReader = new LcmLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
     }
     else
     {
@@ -110,6 +112,7 @@ MainController::MainController(int argc, char * argv[])
     rewind = Parse::get().arg(argc, argv, "-r", empty) > -1;
     frameToFrameRGB = Parse::get().arg(argc, argv, "-ftf", empty) > -1;
 
+    std::cout << "rewind is: " << rewind << std::endl;
     gui = new GUI(logFile.length() == 0, Parse::get().arg(argc, argv, "-sc", empty) > -1);
 
     gui->flipColors->Ref().Set(logReader->flipColors);
@@ -133,6 +136,7 @@ MainController::~MainController()
     if(eFusion)
     {
         delete eFusion;
+        std::cout << "deleting eFUsion" << std::endl;
     }
 
     if(gui)
@@ -181,7 +185,10 @@ void MainController::launch()
         if(eFusion)
         {
             run();
+            printf("run done\n");
+            eFusion->savePly();
         }
+
 
         if(eFusion == 0 || resetButton)
         {
@@ -191,6 +198,8 @@ void MainController::launch()
             {
                 delete eFusion;
             }
+
+            printf("calling rewind\n");
 
             logReader->rewind();
             eFusion = new ElasticFusion(openLoop ? std::numeric_limits<int>::max() / 2 : timeDelta,
@@ -216,6 +225,7 @@ void MainController::launch()
         }
 
     }
+  printf("launch exit\n");
 }
 
 void MainController::run()
@@ -245,12 +255,17 @@ void MainController::run()
                 }
                 else
                 {
-                    logReader->getNext();
+                    //std::cout << "Calling safeGetNext()" << std::endl;
+                    good = logReader->safeGetNext();
+                    if (!good) {
+                        return;
+                    }
                 }
                 TOCK("LogRead");
 
                 if(eFusion->getTick() < start)
                 {
+                    printf("doing fast forward\n");
                     eFusion->setTick(start);
                     logReader->fastForward(start);
                 }
@@ -259,6 +274,7 @@ void MainController::run()
 
                 if(framesToSkip > 0)
                 {
+                    printf("doing skip frames\n");
                     eFusion->setTick(eFusion->getTick() + framesToSkip);
                     logReader->fastForward(logReader->currentFrame + framesToSkip);
                     framesToSkip = 0;
@@ -273,7 +289,13 @@ void MainController::run()
                     *currentPose = groundTruthOdometry->getTransformation(logReader->timestamp);
                 }
 
+                //printf("returning from run\n");
+                //good = false;
+                //return;
+
                 eFusion->processFrame(logReader->rgb, logReader->depth, logReader->timestamp, currentPose, weightMultiplier);
+
+                std::cout << "camera pose:" << std::endl << eFusion->getCurrPose() << std::endl;
 
                 if(currentPose)
                 {
@@ -308,6 +330,8 @@ void MainController::run()
             Eigen::Vector3f up = (currQuat * upVector).normalized();
 
             Eigen::Vector3f eye(currPose(0, 3), currPose(1, 3), currPose(2, 3));
+
+            //std::cout << "current pos:" << eye << std::endl;
 
             eye -= forward;
 
@@ -558,9 +582,11 @@ void MainController::run()
 
         if(pangolin::Pushed(*gui->save))
         {
+            printf("Saved\n");
             eFusion->savePly();
         }
 
         TOCK("GUI");
+        std::cout << "has more: " << logReader->hasMore() << std::endl;
     }
 }

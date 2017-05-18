@@ -47,6 +47,8 @@ class LiveLogReader : public LogReader
 
         void getNext();
 
+        bool safeGetNext(){getNext(); return true;};
+
         int getNumFrames();
 
         bool hasMore();

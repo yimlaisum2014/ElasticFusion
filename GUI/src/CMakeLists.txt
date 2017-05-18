@@ -27,6 +27,9 @@ find_package(OpenNI2 REQUIRED)
 find_package(efusion REQUIRED)
 find_package(SuiteSparse REQUIRED)
 
+find_package(lcm REQUIRED CONFIG)
+find_package(bot2-core REQUIRED CONFIG)
+
 if(WIN32)
   find_package(RealSense QUIET)
   CANONIFY_BOOL(REALSENSE_FOUND)
@@ -90,6 +93,8 @@ target_link_libraries(ElasticFusion
                       ${SUITESPARSE_LIBRARIES}
                       ${BLAS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
+                      lcm
+                      lcmtypes_bot2-core
 )
 
 
