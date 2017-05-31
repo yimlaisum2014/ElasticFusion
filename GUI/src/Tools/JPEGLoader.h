@@ -164,8 +164,15 @@ class JPEGLoader
                 jpeg_read_scanlines (&cinfo, &row, 1);
             }
             std::cout << "finished read jpeg_read_scanlines" << std::endl;
-            jpeg_finish_decompress (&cinfo);
-            jpeg_destroy_decompress (&cinfo);
+            try {
+                //jpeg_finish_decompress (&cinfo);
+            }
+            catch(...) {
+                std::cout << "caught jpeg_finish_decompress" << std::endl;
+            }
+            std::cout << "finished jpeg_finish_decompress" << std::endl;
+            //jpeg_destroy_decompress (&cinfo);
+            std::cout << "finished jpeg_destroy_decompress" << std::endl;
             return 0;
         }
 };
