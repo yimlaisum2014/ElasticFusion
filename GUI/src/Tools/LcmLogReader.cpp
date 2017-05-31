@@ -22,6 +22,7 @@
 
 #include <lcmtypes/bot_core/image_t.hpp>
 #include <lcmtypes/bot_core/images_t.hpp>
+#include <jpeglib.h>
 
 
 LcmLogReader::LcmLogReader(std::string file, bool flipColors)
@@ -75,9 +76,23 @@ void LcmLogReader::getNext()
 
 bool LcmLogReader::safeGetNext()
 {
-    getNext();
-    return next_exists;
+    try {
+        getNext();
+        return next_exists;    
+    }
+    catch(...) {
+        std::cout << "catched in safeGetNext()" << std::endl;
+        return false;
+    }
+    
 }
+
+// int jpeg_decompress_8u_rgb (const uint8_t * src, int src_size,
+//         uint8_t * dest, int width, int height, int stride)
+// {
+//     return jpeg_decompress_8u (src, src_size, dest, width, height,
+//             stride, JCS_RGB);
+// }
 
 void LcmLogReader::getCore()
 {
@@ -97,6 +112,7 @@ void LcmLogReader::getCore()
 
     bot_core::images_t message;
     message.decode(event->data, 0, event->datalen);
+    
     timestamp = message.utime;
 
     std::cout << "timestamp: " << timestamp << std::endl;
@@ -156,8 +172,19 @@ void LcmLogReader::getCore()
     else if(imageSize > 0)
     {
       //  printf("jpeg read color image\n");
+        std::cout << "before jpeg read data" << std::endl;
+        std::cout << "imageSize: " << imageSize << std::endl;
+        size_t w = colorImage.width;
+        size_t h = colorImage.height;
+        jpeg.jpeg_decompress_8u(colorImage.data.data(),                colorImage.size,                (unsigned char *)&decompressionBufferImage[0],               w, h, w*3, JCS_RGB);
 
-        jpeg.readData(colorImage.data.data(), imageSize, (unsigned char *)&decompressionBufferImage[0]);
+        // jpeg read used by director
+        //jpeg_decompress_8u_rgb(cameraData->mImageMessage.data.data(), cameraData->mImageMessage.size, cameraData->mImageBuffer.data(),                             w, h, w*3);
+
+        // old jpeg read
+        //jpeg.readData(colorImage.data.data(), imageSize, (unsigned char *)&decompressionBufferImage[0]);
+
+        std::cout << "after jpeg read data" << std::endl;
     }
     else
     {

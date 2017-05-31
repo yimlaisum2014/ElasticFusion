@@ -79,6 +79,7 @@ class JPEGLoader
 
             for(; height--; data += (width * 3))
             {
+                std::cout << "height " << height << std::endl;
                 jpeg_read_scanlines(&cinfo, buffer, 1);
 
                 unsigned char * bgr = (unsigned char *)buffer[0];
@@ -94,6 +95,78 @@ class JPEGLoader
             jpeg_finish_decompress(&cinfo);
 
             jpeg_destroy_decompress(&cinfo);
+        }
+
+        static void
+        init_source (j_decompress_ptr cinfo)
+        {
+        }
+
+        static boolean
+        fill_input_buffer (j_decompress_ptr cinfo)
+        {
+        //    fprintf (stderr, "Error: JPEG decompressor ran out of buffer space\n");
+            return TRUE;
+        }
+
+        static void
+        skip_input_data (j_decompress_ptr cinfo, long num_bytes)
+        {
+            cinfo->src->next_input_byte += num_bytes;
+            cinfo->src->bytes_in_buffer -= num_bytes;
+        }
+
+        static void
+        term_source (j_decompress_ptr cinfo)
+        {
+        }
+
+        static void 
+        jpeg_err_emit_message(j_common_ptr cinfo, int msg_level)
+        {
+            // suppress warnings and errors
+        }
+
+        int jpeg_decompress_8u (const uint8_t * src, int src_size, 
+            uint8_t * dest, int width, int height, int stride, J_COLOR_SPACE ocs)
+        {
+            struct jpeg_decompress_struct cinfo;
+            struct jpeg_error_mgr jerr;
+            struct jpeg_source_mgr jsrc;
+
+            cinfo.err = jpeg_std_error (&jerr);
+            //jerr.emit_message = jpeg_err_emit_message;
+            jpeg_create_decompress (&cinfo);
+
+            jsrc.next_input_byte = src;
+            jsrc.bytes_in_buffer = src_size;
+            jsrc.init_source = init_source;
+            jsrc.fill_input_buffer = fill_input_buffer;
+            jsrc.skip_input_data = skip_input_data;
+            jsrc.resync_to_restart = jpeg_resync_to_restart;
+            jsrc.term_source = term_source;
+            cinfo.src = &jsrc;
+
+            jpeg_read_header (&cinfo, TRUE);
+            cinfo.out_color_space = ocs;
+            jpeg_start_decompress (&cinfo);
+
+            if (cinfo.output_height != height || cinfo.output_width != width) {
+                fprintf (stderr, "Error: Buffer was %dx%d but JPEG image is %dx%d\n",
+                        width, height, cinfo.output_width, cinfo.output_height);
+                jpeg_destroy_decompress (&cinfo);
+                return -1;
+            }
+
+            std::cout << "about to read jpeg_read_scanlines" << std::endl;
+            while (cinfo.output_scanline < height) {
+                uint8_t * row = dest + cinfo.output_scanline * stride;
+                jpeg_read_scanlines (&cinfo, &row, 1);
+            }
+            std::cout << "finished read jpeg_read_scanlines" << std::endl;
+            jpeg_finish_decompress (&cinfo);
+            jpeg_destroy_decompress (&cinfo);
+            return 0;
         }
 };
 
