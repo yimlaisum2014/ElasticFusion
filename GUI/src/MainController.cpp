@@ -34,6 +34,12 @@ MainController::MainController(int argc, char * argv[])
     std::string calibrationFile;
     Parse::get().arg(argc, argv, "-cal", calibrationFile);
 
+    std::cout << "Testing..." << std::endl;
+    ros::Time::init();
+    double secs =ros::Time::now().toSec();
+    std::cout << "current time in ROS is" << secs << std::endl;
+
+
     Resolution::getInstance(640, 480);
 
     if(calibrationFile.length())
@@ -49,7 +55,8 @@ MainController::MainController(int argc, char * argv[])
 
     if(logFile.length())
     {
-        logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+        //logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+        logReader = new ROSBagReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
     }
     else
     {

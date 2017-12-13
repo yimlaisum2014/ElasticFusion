@@ -23,6 +23,9 @@
 #include "Tools/GroundTruthOdometry.h"
 #include "Tools/RawLogReader.h"
 #include "Tools/LiveLogReader.h"
+#include "Tools/ROSBagReader.h"
+
+#include <ros/ros.h>
 
 #ifndef MAINCONTROLLER_H_
 #define MAINCONTROLLER_H_
