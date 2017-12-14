@@ -32,6 +32,26 @@
 #include <string>
 #include <stack>
 
+#include <ros/ros.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+
+#include <boost/foreach.hpp>
+
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
+
+// Struct to store rgbd data
+class ROSRgbdData
+{
+public:
+  std::vector<sensor_msgs::Image::ConstPtr> images_rgb;
+  std::vector<sensor_msgs::Image::ConstPtr> images_d;
+  sensor_msgs::CameraInfo::ConstPtr cam_info_rgb;
+  sensor_msgs::CameraInfo::ConstPtr cam_info_d;
+};
+
+
 class ROSBagReader : public LogReader
 {
     public:
@@ -61,6 +81,7 @@ class ROSBagReader : public LogReader
 
     private:
         void getCore();
+        ROSRgbdData log_rgbd_data;
 };
 
 #endif /* ROSBAGREADER_H_ */
