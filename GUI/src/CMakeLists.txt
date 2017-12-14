@@ -32,6 +32,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   message_generation
+  sensor_msgs
+  message_filters
+  rosbag
 )
 
 if(WIN32)

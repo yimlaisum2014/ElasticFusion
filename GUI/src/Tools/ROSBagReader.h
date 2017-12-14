@@ -35,32 +35,32 @@
 class ROSBagReader : public LogReader
 {
     public:
-        ROSBagReader(std::string file, bool flipColors) : LogReader(file, flipColors){};
+        ROSBagReader(std::string file, bool flipColors);
 
-        virtual ~ROSBagReader(){};
+        virtual ~ROSBagReader();
 
-        void getNext(){};
+        void getNext();
 
-        void getBack(){};
+        void getBack();
 
-        int getNumFrames(){return 1;};
+        int getNumFrames();
 
-        bool hasMore(){return false;};
+        bool hasMore();
 
-        bool rewound(){return false;};
+        bool rewound();
 
-        void rewind(){};
+        void rewind();
 
-        void fastForward(int frame){};
+        void fastForward(int frame);
 
-        const std::string getFile(){return "file";};
+        const std::string getFile();
 
-        void setAuto(bool value){};
+        void setAuto(bool value);
 
         std::stack<int> filePointers;
 
     private:
-        void getCore(){};
+        void getCore();
 };
 
 #endif /* ROSBAGREADER_H_ */
