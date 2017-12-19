@@ -25,7 +25,7 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   bag.open(filename, rosbag::bagmode::Read);
 
   std::cout << "opening bag" << std::endl;
-  std::cout << "rgbd dataset size" << log_rgbd_data.images_d.size() << std::endl;
+  std::cout << "rgbd dataset size " << log_rgbd_data.images_d.size() << std::endl;
   
   std::string image_d_topic = "/camera_1112170110/depth_registered/sw_registered/image_rect";
   std::string image_rgb_topic = "/camera_1112170110/rgb/image_rect_color";
@@ -78,7 +78,8 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   }
   bag.close();
   std::cout << "closing bag" << std::endl;
-  std::cout << "rgbd dataset size" << log_rgbd_data.images_d.size() << std::endl;
+  std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
+  std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
 
 ROSBagReader::ROSBagReader(std::string file, bool flipColors)
@@ -87,18 +88,18 @@ ROSBagReader::ROSBagReader(std::string file, bool flipColors)
     std::cout << "constructing ROSBagReader" << std::endl;
     assert(pangolin::FileExists(file.c_str()));
     
+    // Load in all of the ros bag into an ROSRgbdData strcut
     loadBag(file, log_rgbd_data);
-    exit(0);
 
-    //logFile = new lcm::LogFile(file, "r");
-    //fp = logFile->getFilePtr();
+    fp = fopen(file.c_str(), "rb");
 
     currentFrame = 0;
 
-    // now is when I read over the entire ROS Bag
-
-
-    numFrames = 10000;
+    // if (log_rgbd_data.images_rgb.size() != log_rgbd_data.images_d.size()) {
+    //   std::cout << "Need to implement time sync!" << std::endl;
+    //   exit(0);
+    // }
+    numFrames = log_rgbd_data.images_rgb.size();
 
     depthReadBuffer = new unsigned char[numPixels * 2];
     imageReadBuffer = new unsigned char[numPixels * 3];
@@ -112,6 +113,8 @@ ROSBagReader::~ROSBagReader()
     delete [] imageReadBuffer;
     delete [] decompressionBufferDepth;
     delete [] decompressionBufferImage;
+
+    fclose(fp);
 
 }
 
@@ -128,6 +131,7 @@ void ROSBagReader::getBack()
 
 void ROSBagReader::getNext()
 {
+    std::cout << "in getNext" << std::endl;
     filePointers.push(ftell(fp));
 
     getCore();
@@ -135,36 +139,26 @@ void ROSBagReader::getNext()
 
 void ROSBagReader::getCore()
 {
-    std::string channel = "";
-    //const lcm::LogEvent* event = 0;
+    std::cout << "in getCore" << std::endl;
 
-    // while (channel != "OPENNI_FRAME") {
-    //     event = logFile->readNextEvent();
-    //     channel = event->channel;
-    //     //std::cout << "read event on channel: " << channel << std::endl;
-    // }
+    timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toSec();
 
-    // bot_core::images_t message;
-    // message.decode(event->data, 0, event->datalen);
-    // timestamp = message.utime;
+    std::cout << log_rgbd_data.images_rgb.at(currentFrame)->header.stamp << "was rgb timestamp" << std::endl;
+    std::cout << log_rgbd_data.images_d.at(currentFrame)->header.stamp << "was d timestamp" << std::endl;
 
-    // std::cout << "timestamp: " << timestamp << std::endl;
-    // std::cout << "frame: " << currentFrame << std::endl;
+    std::cout << log_rgbd_data.images_rgb.at(currentFrame+1)->header.stamp << "was rgb timestamp" << std::endl;
+    std::cout << log_rgbd_data.images_d.at(currentFrame+1)->header.stamp << "was d timestamp" << std::endl;
 
-    // bot_core::image_t colorImage = message.images[0];
-    // bot_core::image_t depthImage = message.images[1];
+    std::cout << log_rgbd_data.images_rgb.at(0)->encoding << " is rgb encoding" << std::endl;
+    std::cout << "height " << log_rgbd_data.images_rgb.at(0)->height << std::endl;
+    std::cout << "width " << log_rgbd_data.images_rgb.at(0)->width << std::endl;
+    std::cout << log_rgbd_data.images_d.at(0)->encoding << " is d encoding" << std::endl;
+ 
 
-
-    // bool isZlibCompressed = false;
-
-    // if (depthImage.pixelformat == bot_core::image_t::PIXEL_FORMAT_INVALID)
-    // {
-    //   isZlibCompressed = true;
-    // }
-
-    // depthSize = depthImage.size;
-    // imageSize = colorImage.size;
-
+    depthSize = log_rgbd_data.images_d.at(0)->step * log_rgbd_data.images_d.at(0)->height;
+    imageSize = log_rgbd_data.images_rgb.at(0)->step * log_rgbd_data.images_rgb.at(0)->height;
+    std::cout << "depthSize " << depthSize << std::endl;
+    std::cout << "imageSize " << imageSize << std::endl;   
 
 /*
     auto tmp = fread(&timestamp,sizeof(int64_t),1,fp);
@@ -181,6 +175,27 @@ void ROSBagReader::getCore()
         assert(tmp);
     }
 */
+
+    // testing trying to feed blank data in
+    // /
+    // unsigned char* depth_scratch = new unsigned char[numPixels * 2];
+    // for (int i = 0; i<numPixels*2; i++) {
+    //   depth_scratch[i] = 100;
+    // }
+    // unsigned char* image_scratch = new unsigned char[numPixels * 3];
+    // for (int i = 0; i<numPixels*3; i++) {
+    //   image_scratch[i] = 100;
+    // }
+    //memcpy(&decompressionBufferDepth[0], &depth_scratch, numPixels*2);
+    //memcpy(&decompressionBufferImage[0], &image_scratch, numPixels*3);
+
+    memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels*2);
+    memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels*3);
+    rgb = (unsigned char *)&decompressionBufferImage[0];
+    depth = (unsigned short *)&decompressionBufferDepth;
+    imageReadBuffer = 0;
+    depthReadBuffer = 0;
+
 
     // if(depthSize == numPixels * 2)
     // {
@@ -213,13 +228,13 @@ void ROSBagReader::getCore()
     // depth = (unsigned short *)decompressionBufferDepth;
     // rgb = (unsigned char *)&decompressionBufferImage[0];
 
-    // if(flipColors)
-    // {
-    //     for(int i = 0; i < Resolution::getInstance().numPixels() * 3; i += 3)
-    //     {
-    //         std::swap(rgb[i + 0], rgb[i + 2]);
-    //     }
-    // }
+    if(flipColors)
+    {
+        for(int i = 0; i < Resolution::getInstance().numPixels() * 3; i += 3)
+        {
+            std::swap(rgb[i + 0], rgb[i + 2]);
+        }
+    }
 
     currentFrame++;
 }
