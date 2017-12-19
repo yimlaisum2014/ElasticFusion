@@ -82,6 +82,11 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
 
+// void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
+// {
+
+// }
+
 ROSBagReader::ROSBagReader(std::string file, bool flipColors)
  : LogReader(file, flipColors)
 {
@@ -90,6 +95,7 @@ ROSBagReader::ROSBagReader(std::string file, bool flipColors)
     
     // Load in all of the ros bag into an ROSRgbdData strcut
     loadBag(file, log_rgbd_data);
+    //convertDepth(log_rgbd_data);
 
     fp = fopen(file.c_str(), "rb");
 
@@ -158,75 +164,50 @@ void ROSBagReader::getCore()
     depthSize = log_rgbd_data.images_d.at(0)->step * log_rgbd_data.images_d.at(0)->height;
     imageSize = log_rgbd_data.images_rgb.at(0)->step * log_rgbd_data.images_rgb.at(0)->height;
     std::cout << "depthSize " << depthSize << std::endl;
-    std::cout << "imageSize " << imageSize << std::endl;   
+    std::cout << "imageSize " << imageSize << std::endl; 
 
-/*
-    auto tmp = fread(&timestamp,sizeof(int64_t),1,fp);
-    assert(tmp);
-    tmp = fread(&depthSize,sizeof(int32_t),1,fp);
-    assert(tmp);
-    tmp = fread(&imageSize,sizeof(int32_t),1,fp);
-    assert(tmp);
-    tmp = fread(depthReadBuffer,depthSize,1,fp);
-    assert(tmp);
-    if(imageSize > 0)
-    {
-        tmp = fread(imageReadBuffer,imageSize,1,fp);
-        assert(tmp);
-    }
-*/
-
-    // testing trying to feed blank data in
-    // /
-    // unsigned char* depth_scratch = new unsigned char[numPixels * 2];
-    // for (int i = 0; i<numPixels*2; i++) {
-    //   depth_scratch[i] = 100;
+    // Depth
+    // if(depthSize == numPixels * 2)
+    // {
+    //     printf("copying depth image\n");
+    //     memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
+    // } else if (depthSize == numPixels *4) {
+    //     printf("Need to convert from 32FC1 to 16UC1\n");
+    //     cv::Mat cv_depth = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_32FC1); 
+    //     for (size_t i = 0; i < log_rgbd_data.images_d.at(currentFrame)->height; i++) {
+    //         for (size_t j = 0; j < log_rgbd_data.images_d.at(currentFrame)->width; j++) {
+    //             cv_depth.at<float>(j,i) = *(((uint8_t*) (&log_rgbd_data.images_d.at(currentFrame)->data)) + 4*(i*log_rgbd_data.images_d.at(currentFrame)->width + j));
+    //             if (std::isnan(cv_depth.at<float>(j,i))) {
+    //                 cv_depth.at<float>(j,i) = 0.0;
+    //             }
+    //         }
+    //     }
+    //     cv_depth.convertTo(cv_depth, CV_16UC1, 1000.0); 
+    //     memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
+    //     printf("finished the conversion\n");
     // }
-    // unsigned char* image_scratch = new unsigned char[numPixels * 3];
-    // for (int i = 0; i<numPixels*3; i++) {
-    //   image_scratch[i] = 100;
+    // else
+    // {
+    //   printf("haven't implemented decompressing depth image\n");
+    //   exit(0);
     // }
-    //memcpy(&decompressionBufferDepth[0], &depth_scratch, numPixels*2);
-    //memcpy(&decompressionBufferImage[0], &image_scratch, numPixels*3);
+    // printf("finished managing depth image\n");
 
-    if(depthSize == numPixels * 2)
-    {
-        // printf("copying depth image\n");
-        memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels * 2);
-    } else if (depthSize == numPixels *4) {
-        printf("Need to convert from 32FC1 to 16UC1\n");
-        cv::Mat depth = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_32FC1); 
-        exit(0);
-    }
-    else
-    {
-      // printf("uncompress depth image\n");
-        unsigned long decompLength = numPixels * 2;
-        uncompress(&decompressionBufferDepth[0], (unsigned long *)&decompLength, (const Bytef *) &log_rgbd_data.images_d.at(currentFrame)->data, depthSize);
-    }
 
+    // RGB
     if(imageSize == numPixels * 3)
     {
-        memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels * 3);
-    }
-    else if(imageSize > 0)
-    {
-        //jpeg.readData(&(log_rgbd_data.images_rgb.at(currentFrame)->data), imageSize, (unsigned char *)&decompressionBufferImage[0]);
+        memcpy(&decompressionBufferImage[0], &(log_rgbd_data.images_rgb.at(currentFrame)->data[0]), numPixels * 3);
+    } else {
+        printf("haven't implemented decompressing depth image\n");
         exit(0);
     }
-    else
-    {
-        memset(&decompressionBufferImage[0], 0, numPixels * 3);
-    }
-
-
-    //memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels*2);
-    //memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels*3);
     
+    memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
+    //memcpy(&decompressionBufferImage[0], &(log_rgbd_data.images_rgb.at(currentFrame)->data[0]), numPixels * 3);
 
     rgb = (unsigned char *)&decompressionBufferImage[0];
-    depth = (unsigned short *)&decompressionBufferDepth;
-
+    depth = (unsigned short *)&decompressionBufferDepth[0];
 
     if(flipColors)
     {
