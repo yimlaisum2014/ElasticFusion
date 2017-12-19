@@ -26,6 +26,7 @@ find_package(CUDA REQUIRED)
 find_package(OpenNI2 REQUIRED)
 find_package(efusion REQUIRED)
 find_package(SuiteSparse REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -54,6 +55,7 @@ include_directories(${Pangolin_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${EFUSION_INCLUDE_DIR})
 include_directories(${OPENNI2_INCLUDE_DIR})
+include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -104,6 +106,7 @@ target_link_libraries(ElasticFusion
                       ${BLAS_LIBRARIES}
                       ${LAPACK_LIBRARIES}
                       ${catkin_LIBRARIES}
+                      ${OpenCV_LIBS}
 )
 
 

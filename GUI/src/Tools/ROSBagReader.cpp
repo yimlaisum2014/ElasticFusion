@@ -189,44 +189,44 @@ void ROSBagReader::getCore()
     //memcpy(&decompressionBufferDepth[0], &depth_scratch, numPixels*2);
     //memcpy(&decompressionBufferImage[0], &image_scratch, numPixels*3);
 
-    memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels*2);
-    memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels*3);
+    if(depthSize == numPixels * 2)
+    {
+        // printf("copying depth image\n");
+        memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels * 2);
+    } else if (depthSize == numPixels *4) {
+        printf("Need to convert from 32FC1 to 16UC1\n");
+        cv::Mat depth = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_32FC1); 
+        exit(0);
+    }
+    else
+    {
+      // printf("uncompress depth image\n");
+        unsigned long decompLength = numPixels * 2;
+        uncompress(&decompressionBufferDepth[0], (unsigned long *)&decompLength, (const Bytef *) &log_rgbd_data.images_d.at(currentFrame)->data, depthSize);
+    }
+
+    if(imageSize == numPixels * 3)
+    {
+        memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels * 3);
+    }
+    else if(imageSize > 0)
+    {
+        //jpeg.readData(&(log_rgbd_data.images_rgb.at(currentFrame)->data), imageSize, (unsigned char *)&decompressionBufferImage[0]);
+        exit(0);
+    }
+    else
+    {
+        memset(&decompressionBufferImage[0], 0, numPixels * 3);
+    }
+
+
+    //memcpy(&decompressionBufferDepth[0], &log_rgbd_data.images_d.at(currentFrame)->data, numPixels*2);
+    //memcpy(&decompressionBufferImage[0], &log_rgbd_data.images_rgb.at(currentFrame)->data, numPixels*3);
+    
+
     rgb = (unsigned char *)&decompressionBufferImage[0];
     depth = (unsigned short *)&decompressionBufferDepth;
-    imageReadBuffer = 0;
-    depthReadBuffer = 0;
 
-
-    // if(depthSize == numPixels * 2)
-    // {
-    //    // printf("copying depth image\n");
-    //     memcpy(&decompressionBufferDepth[0], depthImage.data.data(), numPixels * 2);
-    // }
-    // else
-    // {
-    //   // printf("uncompress depth image\n");
-    //     unsigned long decompLength = numPixels * 2;
-    //     uncompress(&decompressionBufferDepth[0], (unsigned long *)&decompLength, (const Bytef *)depthImage.data.data(), depthSize);
-    // }
-
-    // if(imageSize == numPixels * 3)
-    // {
-    //   //  printf("copy color image\n");
-    //     memcpy(&decompressionBufferImage[0], colorImage.data.data(), numPixels * 3);
-    // }
-    // else if(imageSize > 0)
-    // {
-    //   //  printf("jpeg read color image\n");
-
-    //     jpeg.readData(colorImage.data.data(), imageSize, (unsigned char *)&decompressionBufferImage[0]);
-    // }
-    // else
-    // {
-    //     memset(&decompressionBufferImage[0], 0, numPixels * 3);
-    // }
-
-    // depth = (unsigned short *)decompressionBufferDepth;
-    // rgb = (unsigned char *)&decompressionBufferImage[0];
 
     if(flipColors)
     {

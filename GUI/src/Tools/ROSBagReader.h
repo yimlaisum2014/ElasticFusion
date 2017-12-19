@@ -32,6 +32,10 @@
 #include <string>
 #include <stack>
 
+#include <cv_bridge/cv_bridge.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+
 #include <ros/ros.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
