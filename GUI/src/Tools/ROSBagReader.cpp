@@ -82,10 +82,6 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
 
-// void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
-// {
-
-// }
 
 ROSBagReader::ROSBagReader(std::string file, bool flipColors)
  : LogReader(file, flipColors)
@@ -95,7 +91,6 @@ ROSBagReader::ROSBagReader(std::string file, bool flipColors)
     
     // Load in all of the ros bag into an ROSRgbdData strcut
     loadBag(file, log_rgbd_data);
-    //convertDepth(log_rgbd_data);
 
     fp = fopen(file.c_str(), "rb");
 
@@ -171,20 +166,19 @@ void ROSBagReader::getCore()
     {
         printf("copying depth image\n");
         memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
-    } else if (depthSize == numPixels *4) {
+    } else if (depthSize == numPixels * 4) {
         printf("Need to convert from 32FC1 to 16UC1\n");
         cv::Mat cv_depth = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_32FC1); 
-
         for (size_t i = 0; i < log_rgbd_data.images_d.at(currentFrame)->height; i++) {
             for (size_t j = 0; j < log_rgbd_data.images_d.at(currentFrame)->width; j++) {
-                cv_depth.at<float>(i,j) = *( (uint32_t*) &(log_rgbd_data.images_d.at(currentFrame)->data[0]) + (i*log_rgbd_data.images_d.at(currentFrame)->width + j) );
-                // if (std::isnan(cv_depth.at<float>(j,i))) {
-                //     cv_depth.at<float>(j,i) = 0.0;
-                // }
+                cv_depth.at<float>(i,j) = *( (float*) &(log_rgbd_data.images_d.at(currentFrame)->data[0]) + (i*log_rgbd_data.images_d.at(currentFrame)->width + j) );
             }
         }
-        cv_depth.convertTo(cv_depth, CV_16UC1, 1000.0); 
-        memcpy(&decompressionBufferDepth[0], &(cv_depth.data[0]), numPixels * 2);
+        std::cout << cv_depth.size() << std::endl;
+        cv::Mat cv_depth_out = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_16UC1);
+        cv_depth.convertTo(cv_depth_out, CV_16UC1, 1000);
+        std::cout << cv_depth_out.size() << std::endl; 
+        memcpy(&decompressionBufferDepth[0], cv_depth_out.ptr(), numPixels * 2);
         printf("finished the conversion\n");
     }
     else
@@ -192,6 +186,7 @@ void ROSBagReader::getCore()
       printf("haven't implemented decompressing depth image\n");
       exit(0);
     }
+
     printf("finished managing depth image\n");
 
 
@@ -203,9 +198,6 @@ void ROSBagReader::getCore()
         printf("haven't implemented decompressing depth image\n");
         exit(0);
     }
-    
-    memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
-    //memcpy(&decompressionBufferImage[0], &(log_rgbd_data.images_rgb.at(currentFrame)->data[0]), numPixels * 3);
 
     rgb = (unsigned char *)&decompressionBufferImage[0];
     depth = (unsigned short *)&decompressionBufferDepth[0];
@@ -224,26 +216,6 @@ void ROSBagReader::getCore()
 void ROSBagReader::fastForward(int frame)
 {
   printf("ROSBagReader::fastForward not implemented\n");
-/*
-    while(currentFrame < frame && hasMore())
-    {
-        filePointers.push(ftell(fp));
-        auto tmp = fread(&timestamp,sizeof(int64_t),1,fp);
-        assert(tmp);
-        tmp = fread(&depthSize,sizeof(int32_t),1,fp);
-        assert(tmp);
-        tmp = fread(&imageSize,sizeof(int32_t),1,fp);
-        assert(tmp);
-        tmp = fread(depthReadBuffer,depthSize,1,fp);
-        assert(tmp);
-        if(imageSize > 0)
-        {
-            tmp = fread(imageReadBuffer,imageSize,1,fp);
-            assert(tmp);
-        }
-        currentFrame++;
-    }
-*/
 }
 
 int ROSBagReader::getNumFrames()
@@ -264,21 +236,7 @@ void ROSBagReader::rewind()
         std::stack<int> empty;
         std::swap(empty, filePointers);
     }
-/*
-    fclose(fp);
-    fp = fopen(file.c_str(), "rb");
-    auto tmp = fread(&numFrames,sizeof(int32_t),1,fp);
-    assert(tmp);
-    currentFrame = 0;
-*/
-
     printf("ROSBagReader::rewind\n");
-    /*
-    delete logFile;
-    logFile = new lcm::LogFile(file, "r");
-    fp = logFile->getFilePtr();
-    */
-
     currentFrame = 0;
 }
 
