@@ -116,25 +116,16 @@ ROSBagReader::~ROSBagReader()
     delete [] decompressionBufferImage;
 
     fclose(fp);
-
 }
 
 void ROSBagReader::getBack()
 {
-    assert(filePointers.size() > 0);
-
-    fseek(fp, filePointers.top(), SEEK_SET);
-
-    filePointers.pop();
-
     getCore();
 }
 
 void ROSBagReader::getNext()
 {
     std::cout << "in getNext" << std::endl;
-    filePointers.push(ftell(fp));
-
     getCore();
 }
 
@@ -231,18 +222,13 @@ bool ROSBagReader::hasMore()
 
 void ROSBagReader::rewind()
 {
-    if (filePointers.size() != 0)
-    {
-        std::stack<int> empty;
-        std::swap(empty, filePointers);
-    }
     printf("ROSBagReader::rewind\n");
     currentFrame = 0;
 }
 
 bool ROSBagReader::rewound()
 {
-    return filePointers.size() == 0;
+    return (currentFrame == 0);
 }
 
 const std::string ROSBagReader::getFile()
