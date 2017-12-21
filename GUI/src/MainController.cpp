@@ -33,40 +33,52 @@ MainController::MainController(int argc, char * argv[])
 
     std::string calibrationFile;
     Parse::get().arg(argc, argv, "-cal", calibrationFile);
-
-    Resolution::getInstance(640, 480);
-
-    if(calibrationFile.length())
-    {
-        loadCalibration(calibrationFile);
-    }
-    else
-    {
-        Intrinsics::getInstance(528, 528, 320, 240);
-    }
-
     Parse::get().arg(argc, argv, "-l", logFile);
 
-    if(logFile.length())
+    if (isRosBag(logFile)) 
     {
-        logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
-    }
-    else
+        std::cout << "Loading camera info and calibration from ROS bag" << std::endl;
+        int pixels_width, pixels_height;
+        double fx, fy, cx, cy;
+        rosGetParams(logFile, pixels_width, pixels_height, fx, fy, cx, cy);
+        Resolution::getInstance(pixels_width, pixels_height);
+        Intrinsics::getInstance(fx, fy, cx, cy);
+        logReader = new ROSBagReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+    } 
+    else 
     {
-        bool flipColors = Parse::get().arg(argc,argv,"-f",empty) > -1;
-        logReader = new LiveLogReader(logFile, flipColors, LiveLogReader::CameraType::OpenNI2);
-
-        good = ((LiveLogReader *)logReader)->cam->ok();
-
-#ifdef WITH_REALSENSE
-        if(!good)
+        Resolution::getInstance(640, 480);
+        if(calibrationFile.length())
         {
-          delete logReader;
-          logReader = new LiveLogReader(logFile, flipColors, LiveLogReader::CameraType::RealSense);
-
-          good = ((LiveLogReader *)logReader)->cam->ok();
+            loadCalibration(calibrationFile);
         }
-#endif
+        else
+        {
+            Intrinsics::getInstance(528, 528, 320, 240);
+        }
+    
+        if(logFile.length())
+        {
+            logReader = new RawLogReader(logFile, Parse::get().arg(argc, argv, "-f", empty) > -1);
+            
+        }
+        else
+        {
+            bool flipColors = Parse::get().arg(argc,argv,"-f",empty) > -1;
+            logReader = new LiveLogReader(logFile, flipColors, LiveLogReader::CameraType::OpenNI2);
+
+            good = ((LiveLogReader *)logReader)->cam->ok();
+
+    #ifdef WITH_REALSENSE
+            if(!good)
+            {
+              delete logReader;
+              logReader = new LiveLogReader(logFile, flipColors, LiveLogReader::CameraType::RealSense);
+
+              good = ((LiveLogReader *)logReader)->cam->ok();
+            }
+    #endif
+        }
     }
 
     if(Parse::get().arg(argc, argv, "-p", poseFile) > 0)
