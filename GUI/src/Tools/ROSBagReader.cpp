@@ -18,30 +18,60 @@
 
 #include "ROSBagReader.h"
 
-// Load bag
+bool isRosBag(std::string const& value)
+{
+    std::string ending = ".bag";
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+void rosGetParams(std::string const& filename, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
+    rosbag::Bag bag;
+    bag.open(filename, rosbag::bagmode::Read);
+    
+    // Pete ToDo: provice CLI for setting topic names
+    std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
+    std::vector<std::string> topics;
+    topics.push_back(cam_info_topic);
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+    BOOST_FOREACH(rosbag::MessageInstance const m, view)
+    { 
+        if (m.getTopic() == cam_info_topic || ("/" + m.getTopic() == cam_info_topic)) {
+            sensor_msgs::CameraInfo::ConstPtr cam_info = m.instantiate<sensor_msgs::CameraInfo>();
+            if (cam_info != NULL) {
+                pixels_width = cam_info->width;
+                pixels_height = cam_info->height;
+                fx = cam_info->K[0];
+                fy = cam_info->K[4];
+                cx = cam_info->K[2];
+                cy = cam_info->K[5];
+                bag.close();
+                return;
+            }
+        }
+    }
+    std::cout << "Did not find camera info!" << std::endl;
+    exit(0);
+}
+
 void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
 {
   rosbag::Bag bag;
   bag.open(filename, rosbag::bagmode::Read);
 
-  std::cout << "opening bag" << std::endl;
-  std::cout << "rgbd dataset size " << log_rgbd_data.images_d.size() << std::endl;
-  
+  // Pete ToDo: provice CLI for setting topic names
   std::string image_d_topic = "/camera_1112170110/depth_registered/sw_registered/image_rect";
   std::string image_rgb_topic = "/camera_1112170110/rgb/image_rect_color";
-  std::string cam_info_d_topic = "/camera_1112170110/depth_registered/sw_registered/camera_info";
-  std::string cam_info_rgb_topic = "/camera_1112170110/rgb/camera_info";
+  std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
   
-  // Image topics to load
   std::vector<std::string> topics;
   topics.push_back(image_d_topic);
   topics.push_back(image_rgb_topic);
-  topics.push_back(cam_info_d_topic);
-  topics.push_back(cam_info_rgb_topic);
+  topics.push_back(cam_info_topic);
   
   rosbag::View view(bag, rosbag::TopicQuery(topics));
   
-  // Load all messages into our stereo dataset
   BOOST_FOREACH(rosbag::MessageInstance const m, view)
   {
     if (m.getTopic() == image_d_topic || ("/" + m.getTopic() == image_d_topic))
@@ -60,24 +90,15 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
       }
     }
     
-    if (m.getTopic() == cam_info_d_topic || ("/" + m.getTopic() == cam_info_d_topic))
-    {
-      sensor_msgs::CameraInfo::ConstPtr l_info = m.instantiate<sensor_msgs::CameraInfo>();
-      if (l_info != NULL) {
-        log_rgbd_data.cam_info_d = l_info;
-      }
-    }
-    
-    if (m.getTopic() == cam_info_rgb_topic || ("/" + m.getTopic() == cam_info_rgb_topic))
+    if (m.getTopic() == cam_info_topic || ("/" + m.getTopic() == cam_info_topic))
     {
       sensor_msgs::CameraInfo::ConstPtr r_info = m.instantiate<sensor_msgs::CameraInfo>();
       if (r_info != NULL) {
-        log_rgbd_data.cam_info_d = r_info;
+        log_rgbd_data.cam_info = r_info;
       }
     }
   }
   bag.close();
-  std::cout << "closing bag" << std::endl;
   std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
@@ -86,7 +107,6 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
 ROSBagReader::ROSBagReader(std::string file, bool flipColors)
  : LogReader(file, flipColors)
 {
-    std::cout << "constructing ROSBagReader" << std::endl;
     assert(pangolin::FileExists(file.c_str()));
     
     // Load in all of the ros bag into an ROSRgbdData strcut
@@ -96,10 +116,12 @@ ROSBagReader::ROSBagReader(std::string file, bool flipColors)
 
     currentFrame = 0;
 
+    // Pete ToDo: need to implement time sync
     // if (log_rgbd_data.images_rgb.size() != log_rgbd_data.images_d.size()) {
     //   std::cout << "Need to implement time sync!" << std::endl;
     //   exit(0);
     // }
+
     numFrames = log_rgbd_data.images_rgb.size();
 
     depthReadBuffer = new unsigned char[numPixels * 2];
@@ -120,73 +142,49 @@ ROSBagReader::~ROSBagReader()
 
 void ROSBagReader::getBack()
 {
+    currentFrame = numFrames;
     getCore();
 }
 
 void ROSBagReader::getNext()
 {
-    std::cout << "in getNext" << std::endl;
     getCore();
 }
 
 void ROSBagReader::getCore()
 {
-    std::cout << "in getCore" << std::endl;
-
     timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toSec();
+    depthSize = log_rgbd_data.images_d.at(currentFrame)->step * log_rgbd_data.images_d.at(currentFrame)->height;
+    imageSize = log_rgbd_data.images_rgb.at(currentFrame)->step * log_rgbd_data.images_rgb.at(currentFrame)->height;
 
-    std::cout << log_rgbd_data.images_rgb.at(currentFrame)->header.stamp << "was rgb timestamp" << std::endl;
-    std::cout << log_rgbd_data.images_d.at(currentFrame)->header.stamp << "was d timestamp" << std::endl;
-
-    std::cout << log_rgbd_data.images_rgb.at(currentFrame+1)->header.stamp << "was rgb timestamp" << std::endl;
-    std::cout << log_rgbd_data.images_d.at(currentFrame+1)->header.stamp << "was d timestamp" << std::endl;
-
-    std::cout << log_rgbd_data.images_rgb.at(0)->encoding << " is rgb encoding" << std::endl;
-    std::cout << "height " << log_rgbd_data.images_rgb.at(0)->height << std::endl;
-    std::cout << "width " << log_rgbd_data.images_rgb.at(0)->width << std::endl;
-    std::cout << log_rgbd_data.images_d.at(0)->encoding << " is d encoding" << std::endl;
- 
-
-    depthSize = log_rgbd_data.images_d.at(0)->step * log_rgbd_data.images_d.at(0)->height;
-    imageSize = log_rgbd_data.images_rgb.at(0)->step * log_rgbd_data.images_rgb.at(0)->height;
-    std::cout << "depthSize " << depthSize << std::endl;
-    std::cout << "imageSize " << imageSize << std::endl; 
-
-    // Depth
-    if(depthSize == numPixels * 2)
+    // Depth 
+    if ((depthSize == numPixels * 4) && (log_rgbd_data.images_d.at(currentFrame)->encoding == "32FC1")) 
     {
-        printf("copying depth image\n");
-        memcpy(&decompressionBufferDepth[0], &(log_rgbd_data.images_d.at(currentFrame)->data[0]), numPixels * 2);
-    } else if (depthSize == numPixels * 4) {
-        printf("Need to convert from 32FC1 to 16UC1\n");
+        // Encoding expected to be in ROS's standard CV_32FC1 format, 4 bytes per pixel as float
+        // This convert to CV_16UC1 format, as expected by ElasticFusion
         cv::Mat cv_depth = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_32FC1); 
         for (size_t i = 0; i < log_rgbd_data.images_d.at(currentFrame)->height; i++) {
             for (size_t j = 0; j < log_rgbd_data.images_d.at(currentFrame)->width; j++) {
                 cv_depth.at<float>(i,j) = *( (float*) &(log_rgbd_data.images_d.at(currentFrame)->data[0]) + (i*log_rgbd_data.images_d.at(currentFrame)->width + j) );
             }
         }
-        std::cout << cv_depth.size() << std::endl;
         cv::Mat cv_depth_out = cv::Mat(log_rgbd_data.images_d.at(0)->height, log_rgbd_data.images_d.at(0)->width, CV_16UC1);
         cv_depth.convertTo(cv_depth_out, CV_16UC1, 1000);
-        std::cout << cv_depth_out.size() << std::endl; 
         memcpy(&decompressionBufferDepth[0], cv_depth_out.ptr(), numPixels * 2);
-        printf("finished the conversion\n");
     }
     else
     {
-      printf("haven't implemented decompressing depth image\n");
-      exit(0);
+        std::cout << "Am expecting 32FC1 encoded depth image in ROSBagReader.cpp" << std::endl;
+        exit(0);
     }
-
-    printf("finished managing depth image\n");
 
 
     // RGB
-    if(imageSize == numPixels * 3)
+    if (imageSize == numPixels * 3)
     {
         memcpy(&decompressionBufferImage[0], &(log_rgbd_data.images_rgb.at(currentFrame)->data[0]), numPixels * 3);
     } else {
-        printf("haven't implemented decompressing depth image\n");
+        std::cout << "Am not expecting compressed images in ROSBagReader.cpp" << std::endl;
         exit(0);
     }
 
@@ -206,7 +204,7 @@ void ROSBagReader::getCore()
 
 void ROSBagReader::fastForward(int frame)
 {
-  printf("ROSBagReader::fastForward not implemented\n");
+  std::cout << "ROSBagReader::fastForward not implemented" << std::endl;
 }
 
 int ROSBagReader::getNumFrames()
@@ -222,7 +220,6 @@ bool ROSBagReader::hasMore()
 
 void ROSBagReader::rewind()
 {
-    printf("ROSBagReader::rewind\n");
     currentFrame = 0;
 }
 

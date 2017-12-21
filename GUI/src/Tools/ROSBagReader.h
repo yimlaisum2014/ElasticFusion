@@ -45,16 +45,18 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 
+// Helper functions to enable loading of calibration params before creating a LogReader instance
+bool isRosBag(std::string const& value);
+void rosGetParams(std::string const& filename, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy);
+
 // Struct to store rgbd data
 class ROSRgbdData
 {
 public:
   std::vector<sensor_msgs::Image::ConstPtr> images_rgb;
   std::vector<sensor_msgs::Image::ConstPtr> images_d;
-  sensor_msgs::CameraInfo::ConstPtr cam_info_rgb;
-  sensor_msgs::CameraInfo::ConstPtr cam_info_d;
+  sensor_msgs::CameraInfo::ConstPtr cam_info;       // Note: assumes depth-rgb has already been registered 
 };
-
 
 class ROSBagReader : public LogReader
 {
