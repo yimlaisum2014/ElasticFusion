@@ -101,6 +101,23 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   bag.close();
   std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
+
+  unsigned int size_rgb = log_rgbd_data.images_rgb.size();
+  unsigned int size_d = log_rgbd_data.images_d.size();
+  while(size_rgb != size_d) {
+    if(size_rgb > size_d) {
+      log_rgbd_data.images_rgb.pop_back();
+      size_rgb -= 1;
+    }
+    else {
+      log_rgbd_data.images_d.pop_back();
+      size_d -= 1;
+    }
+  }
+
+  std::cout << "After remove redundant records:" << std::endl;
+  std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
+  std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
 
 

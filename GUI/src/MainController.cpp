@@ -575,4 +575,6 @@ void MainController::run()
 
         TOCK("GUI");
     }
+
+    eFusion->savePly();
 }
