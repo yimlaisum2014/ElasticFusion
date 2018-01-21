@@ -3,3 +3,7 @@ deps/
 .project
 .cproject
 *.user
+
+OpenNI2/
+Pangolin/
+*.swp
