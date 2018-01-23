@@ -170,7 +170,7 @@ void ROSBagReader::getNext()
 
 void ROSBagReader::getCore()
 {
-    timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toSec();
+    timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toNSec();
     depthSize = log_rgbd_data.images_d.at(currentFrame)->step * log_rgbd_data.images_d.at(currentFrame)->height;
     imageSize = log_rgbd_data.images_rgb.at(currentFrame)->step * log_rgbd_data.images_rgb.at(currentFrame)->height;
 
