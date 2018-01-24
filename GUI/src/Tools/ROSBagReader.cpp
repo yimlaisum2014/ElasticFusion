@@ -115,6 +115,10 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
     }
   }
 
+  // clip the first 60 frames due to xtion cold start
+  log_rgbd_data.images_rgb.erase(log_rgbd_data.images_rgb.begin(), log_rgbd_data.images_rgb.begin() + 60);
+  log_rgbd_data.images_d.erase(log_rgbd_data.images_d.begin(), log_rgbd_data.images_d.begin() + 60);
+
   std::cout << "After remove redundant records:" << std::endl;
   std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
