@@ -30,7 +30,7 @@ void rosGetParams(std::string const& filename, int& pixels_width, int& pixels_he
     bag.open(filename, rosbag::bagmode::Read);
     
     // Pete ToDo: provice CLI for setting topic names
-    std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
+    std::string cam_info_topic = "/camera_carmine_1/rgb/camera_info";
     std::vector<std::string> topics;
     topics.push_back(cam_info_topic);
     rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -61,9 +61,9 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   bag.open(filename, rosbag::bagmode::Read);
 
   // Pete ToDo: provice CLI for setting topic names
-  std::string image_d_topic = "/camera_1112170110/depth_registered/sw_registered/image_rect";
-  std::string image_rgb_topic = "/camera_1112170110/rgb/image_rect_color";
-  std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
+  std::string image_d_topic = "/camera_carmine_1/depth_registered/sw_registered/image_rect";
+  std::string image_rgb_topic = "/camera_carmine_1/rgb/image_rect_color";
+  std::string cam_info_topic = "/camera_carmine_1/rgb/camera_info";
   
   std::vector<std::string> topics;
   topics.push_back(image_d_topic);
