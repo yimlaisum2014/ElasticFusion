@@ -45,16 +45,18 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 
-// Helper functions to enable loading of calibration params before creating a LogReader instance
-bool isRosBag(std::string const& value);
-void rosGetParams(const& ROSLogData log_data , int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy);
-
 struct ROSLogData{
     std::string ros_bag_filename;
     std::string image_depth_topic;
-    std::string image_rbg_topic;
+    std::string image_rgb_topic;
     std::string cam_info_topic;
-}
+};
+
+// Helper functions to enable loading of calibration params before creating a LogReader instance
+bool isRosBag(std::string const& value);
+void rosGetParams(const ROSLogData & log_data , int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy);
+
+
 
 // Struct to store rgbd data
 class ROSRgbdData
@@ -68,7 +70,7 @@ public:
 class ROSBagReader : public LogReader
 {
     public:
-        ROSBagReader(const& ROSLogData log_data, bool flipColors);
+        ROSBagReader(const ROSLogData & log_data, bool flipColors);
 
         virtual ~ROSBagReader();
 

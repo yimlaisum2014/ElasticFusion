@@ -25,9 +25,9 @@ bool isRosBag(std::string const& value)
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-void rosGetParams(const& ROSLogData log_data, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
+void rosGetParams(const ROSLogData & log_data, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
     rosbag::Bag bag;
-    bag.open(log_data.filename, rosbag::bagmode::Read);
+    bag.open(log_data.ros_bag_filename, rosbag::bagmode::Read);
     
     // Pete ToDo: provide CLI for setting topic names (done by manuelli!)
     std::string cam_info_topic = log_data.cam_info_topic;
@@ -55,10 +55,10 @@ void rosGetParams(const& ROSLogData log_data, int& pixels_width, int& pixels_hei
     exit(0);
 }
 
-void loadBag(const& ROSLogData log_data, ROSRgbdData& log_rgbd_data)
+void loadBag(const ROSLogData & log_data, ROSRgbdData& log_rgbd_data)
 {
   rosbag::Bag bag;
-  bag.open(log_data.filename, rosbag::bagmode::Read);
+  bag.open(log_data.ros_bag_filename, rosbag::bagmode::Read);
 
   // Pete ToDo: provice CLI for setting topic names
   // std::string image_d_topic = "/camera_carmine_1/depth_registered/sw_registered/image_rect";
@@ -125,7 +125,7 @@ void loadBag(const& ROSLogData log_data, ROSRgbdData& log_rgbd_data)
 }
 
 
-ROSBagReader::ROSBagReader(const& ROSLogData log_data, bool flipColors)
+ROSBagReader::ROSBagReader(const ROSLogData & log_data, bool flipColors)
  : LogReader(file, flipColors)
 {
     assert(pangolin::FileExists(file.c_str()));
