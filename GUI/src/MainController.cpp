@@ -47,6 +47,7 @@ MainController::MainController(int argc, char * argv[])
         Parse::get().arg(argc, argv, "--ros_image_depth_topic", ros_log_data.image_depth_topic);
         Parse::get().arg(argc, argv, "--ros_image_rgb_topic", ros_log_data.image_rgb_topic);
         Parse::get().arg(argc, argv, "--ros_cam_info_topic", ros_log_data.cam_info_topic);
+
         
 
 

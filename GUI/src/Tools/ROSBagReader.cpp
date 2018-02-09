@@ -27,10 +27,12 @@ bool isRosBag(std::string const& value)
 
 void rosGetParams(const ROSLogData & log_data, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
     rosbag::Bag bag;
+    
     bag.open(log_data.ros_bag_filename, rosbag::bagmode::Read);
     
     // Pete ToDo: provide CLI for setting topic names (done by manuelli!)
     std::string cam_info_topic = log_data.cam_info_topic;
+    
     std::vector<std::string> topics;
     topics.push_back(cam_info_topic);
     rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -128,7 +130,7 @@ void loadBag(const ROSLogData & log_data, ROSRgbdData& log_rgbd_data)
 ROSBagReader::ROSBagReader(const ROSLogData & log_data, bool flipColors)
  : LogReader(file, flipColors)
 {
-    assert(pangolin::FileExists(file.c_str()));
+    assert(pangolin::FileExists(log_data.ros_bag_filename.c_str()));
     
     // Load in all of the ros bag into an ROSRgbdData strcut
     loadBag(log_data, log_rgbd_data);
