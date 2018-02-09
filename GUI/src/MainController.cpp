@@ -37,9 +37,20 @@ MainController::MainController(int argc, char * argv[])
 
     if (isRosBag(logFile)) 
     {
+
         std::cout << "Loading camera info and calibration from ROS bag" << std::endl;
         int pixels_width, pixels_height;
         double fx, fy, cx, cy;
+
+        ROSLogData ros_log_data
+        Parse::get().arg(argc, argv, "--ros_bag_filename", ros_log_data.ros_bag_filename);
+        Parse::get().arg(argc, argv, "--ros_image_depth_topic", ros.image_depth_topic);
+        Parse::get().arg(argc, argv, "--ros_image_rgb_topic", ros.image_rgb_topic);
+        Parse::get().arg(argc, argv, "--ros_cam_info_topic", ros.cam_info_topic);
+        
+
+
+
         rosGetParams(logFile, pixels_width, pixels_height, fx, fy, cx, cy);
         Resolution::getInstance(pixels_width, pixels_height);
         Intrinsics::getInstance(fx, fy, cx, cy);
