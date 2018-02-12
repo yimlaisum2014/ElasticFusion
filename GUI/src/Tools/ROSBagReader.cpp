@@ -128,14 +128,15 @@ void loadBag(const ROSLogData & log_data, ROSRgbdData& log_rgbd_data)
 
 
 ROSBagReader::ROSBagReader(const ROSLogData & log_data, bool flipColors)
- : LogReader(file, flipColors)
+ : LogReader(log_data.ros_bag_filename, flipColors)
 {
     assert(pangolin::FileExists(log_data.ros_bag_filename.c_str()));
     
     // Load in all of the ros bag into an ROSRgbdData strcut
     loadBag(log_data, log_rgbd_data);
 
-    fp = fopen(file.c_str(), "rb");
+    // not sure why we need to do this . . . 
+    fp = fopen(log_data.ros_bag_filename.c_str(), "rb");
 
     currentFrame = 0;
 
