@@ -25,12 +25,14 @@ bool isRosBag(std::string const& value)
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-void rosGetParams(std::string const& filename, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
+void rosGetParams(const ROSLogData & log_data, int& pixels_width, int& pixels_height, double& fx, double& fy, double& cx, double& cy) {
     rosbag::Bag bag;
-    bag.open(filename, rosbag::bagmode::Read);
     
-    // Pete ToDo: provice CLI for setting topic names
-    std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
+    bag.open(log_data.ros_bag_filename, rosbag::bagmode::Read);
+    
+    // Pete ToDo: provide CLI for setting topic names (done by manuelli!)
+    std::string cam_info_topic = log_data.cam_info_topic;
+    
     std::vector<std::string> topics;
     topics.push_back(cam_info_topic);
     rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -55,16 +57,20 @@ void rosGetParams(std::string const& filename, int& pixels_width, int& pixels_he
     exit(0);
 }
 
-void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
+void loadBag(const ROSLogData & log_data, ROSRgbdData& log_rgbd_data)
 {
   rosbag::Bag bag;
-  bag.open(filename, rosbag::bagmode::Read);
+  bag.open(log_data.ros_bag_filename, rosbag::bagmode::Read);
 
   // Pete ToDo: provice CLI for setting topic names
-  std::string image_d_topic = "/camera_1112170110/depth_registered/sw_registered/image_rect";
-  std::string image_rgb_topic = "/camera_1112170110/rgb/image_rect_color";
-  std::string cam_info_topic = "/camera_1112170110/rgb/camera_info";
+  // std::string image_d_topic = "/camera_carmine_1/depth_registered/sw_registered/image_rect";
+  // std::string image_rgb_topic = "/camera_carmine_1/rgb/image_rect_color";
+  // std::string cam_info_topic = "/camera_carmine_1/rgb/camera_info";
   
+  std::string image_d_topic = log_data.image_depth_topic;
+  std::string image_rgb_topic = log_data.image_rgb_topic;
+  std::string cam_info_topic = log_data.cam_info_topic;
+
   std::vector<std::string> topics;
   topics.push_back(image_d_topic);
   topics.push_back(image_rgb_topic);
@@ -101,18 +107,36 @@ void loadBag(const std::string &filename, ROSRgbdData& log_rgbd_data)
   bag.close();
   std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
   std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
+
+  unsigned int size_rgb = log_rgbd_data.images_rgb.size();
+  unsigned int size_d = log_rgbd_data.images_d.size();
+  while(size_rgb != size_d) {
+    if(size_rgb > size_d) {
+      log_rgbd_data.images_rgb.pop_back();
+      size_rgb -= 1;
+    }
+    else {
+      log_rgbd_data.images_d.pop_back();
+      size_d -= 1;
+    }
+  }
+
+  std::cout << "After remove redundant records:" << std::endl;
+  std::cout << "rgb data size " << log_rgbd_data.images_rgb.size() << std::endl;
+  std::cout << "d data size " << log_rgbd_data.images_d.size() << std::endl;
 }
 
 
-ROSBagReader::ROSBagReader(std::string file, bool flipColors)
- : LogReader(file, flipColors)
+ROSBagReader::ROSBagReader(const ROSLogData & log_data, bool flipColors)
+ : LogReader(log_data.ros_bag_filename, flipColors)
 {
-    assert(pangolin::FileExists(file.c_str()));
+    assert(pangolin::FileExists(log_data.ros_bag_filename.c_str()));
     
     // Load in all of the ros bag into an ROSRgbdData strcut
-    loadBag(file, log_rgbd_data);
+    loadBag(log_data, log_rgbd_data);
 
-    fp = fopen(file.c_str(), "rb");
+    // not sure why we need to do this . . . 
+    fp = fopen(log_data.ros_bag_filename.c_str(), "rb");
 
     currentFrame = 0;
 
@@ -153,7 +177,7 @@ void ROSBagReader::getNext()
 
 void ROSBagReader::getCore()
 {
-    timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toSec();
+    timestamp = log_rgbd_data.images_rgb.at(currentFrame)->header.stamp.toNSec();
     depthSize = log_rgbd_data.images_d.at(currentFrame)->step * log_rgbd_data.images_d.at(currentFrame)->height;
     imageSize = log_rgbd_data.images_rgb.at(currentFrame)->step * log_rgbd_data.images_rgb.at(currentFrame)->height;
 
