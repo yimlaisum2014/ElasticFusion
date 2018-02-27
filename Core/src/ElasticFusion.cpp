@@ -85,12 +85,12 @@ ElasticFusion::ElasticFusion(const int timeDelta,
     createCompute();
     createFeedbackBuffers();
 
-    std::string filename = fileName;
-    filename.append(".freiburg");
+    //std::string filename = fileName;
+    //filename.append(".freiburg");
 
-    std::ofstream file;
-    file.open(filename.c_str(), std::fstream::out);
-    file.close();
+    //std::ofstream file;
+    //file.open(filename.c_str(), std::fstream::out);
+    //file.close();
 
     Stopwatch::getInstance().setCustomSignature(12431231);
 }
