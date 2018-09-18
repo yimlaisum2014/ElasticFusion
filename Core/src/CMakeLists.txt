@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 2.6.0)
+set(CMAKE_C_COMPILER /usr/bin/gcc-5)
+set(CMAKE_CXX_COMPILER /usr/bin/g++-5)
 
 project(libefusion)
 
@@ -7,8 +9,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(Pangolin 0.1 REQUIRED)
 find_package(CUDA REQUIRED)
 find_package(SuiteSparse REQUIRED)
-set(CMAKE_C_COMPILER /usr/bin/gcc-5)
-set(CMAKE_CXX_COMPILER /usr/bin/g++-5)
+
 set(efusion_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders" CACHE PATH "Where the shaders live")
 
 include_directories(${Pangolin_INCLUDE_DIRS})
